@@ -9,10 +9,14 @@ def read_csv(filename:str):
         return list(data)
 
 def write_csv(data:list[dict], header:list[str], filename:str) -> None:
-    with open(filename, mode='w') as file:
+    with open(filename, mode='a+') as file:
+        writer = csv.DictWriter(file,fieldnames=header)
+        writer.writerows(data)
+
+def write_header(header:list[str], filename:str) -> None:
+    with open(filename, mode='a+') as file:
         writer = csv.DictWriter(file, fieldnames=header)
         writer.writeheader()
-        writer.writerows(data)
 
 def plot(data:list[dict],x:str,y:str):
     df = pd.DataFrame(data)
@@ -30,6 +34,3 @@ def plot_sample(X, y, index):
     plt.imshow(X[index])
     plt.xlabel(y[index])
     plt.show()
-
-
-
