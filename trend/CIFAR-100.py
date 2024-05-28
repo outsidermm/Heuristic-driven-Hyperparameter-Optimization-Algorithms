@@ -25,9 +25,8 @@ X_val = X_val / 255
 
 ### EPOCHS ###
 
-Hyperparameters:list[dict] = []
 write_header(["Epochs","Time","Accuracy"], "./trend_graph/CIFAR-100/epochs.csv")
-for epochs in range(10,200,10):
+for epochs in range(1,3):
     cnn = AlexNet(INPUT_SHAPE, NUM_CLASSES)
 
     start = time.time()
