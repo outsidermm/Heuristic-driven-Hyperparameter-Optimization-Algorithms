@@ -48,7 +48,7 @@ for epochs in range(1,3):
 ### BATCH SIZE ###
 
 write_header(["Batch_size","Time","Accuracy"], "./trend_graph/CIFAR-100/batch_size.csv")
-for batch_size_power in range(4,9):
+for batch_size_power in range(4,10):
     batch_size = 2**batch_size_power
     cnn = AlexNet(INPUT_SHAPE, NUM_CLASSES)
 
@@ -71,7 +71,7 @@ for batch_size_power in range(4,9):
 
 ### LEARNING RATE ###
 write_header(["learning_rate","Time","Accuracy"], "./trend_graph/CIFAR-100/learning_rate.csv")
-for learning_rate_power in range(1,6,0.5):
+for learning_rate_power in range(1,6.5,0.5):
     learning_rate = 10**-learning_rate_power
     cnn = AlexNet(INPUT_SHAPE, NUM_CLASSES)
 
