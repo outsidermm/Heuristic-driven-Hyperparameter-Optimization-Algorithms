@@ -26,7 +26,7 @@ X_val = X_val / 255
 ### EPOCHS ###
 
 write_header(["Epochs","Time","Accuracy"], "./trend_graph/CIFAR-100/epochs.csv")
-for epochs in range(1,3):
+for epochs in range(10,210,10):
     cnn = AlexNet(INPUT_SHAPE, NUM_CLASSES)
 
     start = time.time()
@@ -94,7 +94,7 @@ for learning_rate_power in range(1,6.5,0.5):
 
 ### MOMENTUM ###
 write_header(["momentum","Time","Accuracy"], "./trend_graph/CIFAR-100/momentum.csv")
-for momentum in range(0,0.9,0.05):
+for momentum in range(0,0.95,0.05):
     cnn = AlexNet(INPUT_SHAPE, NUM_CLASSES)
 
     start = time.time()
