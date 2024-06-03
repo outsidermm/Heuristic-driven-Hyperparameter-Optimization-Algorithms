@@ -2,9 +2,9 @@ import sys
 
 sys.path.append(".")
 
-from keras import optimizers, losses, callbacks, models, layers, datasets
+from keras import optimizers, losses, callbacks, models, layers, applications
 from sklearn.model_selection import train_test_split
-from utility.Model import alex_net, preprocessing
+from utility.Model import preprocessing
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
@@ -15,18 +15,20 @@ X_test: np.ndarray = np.load("./dataset/CIFAR-100/X_test.npy")
 y_test: np.ndarray = np.load("./dataset/CIFAR-100/y_test.npy")
 
 X_train, X_val, y_train, y_val = train_test_split(
-    X_train, y_train, test_size=0.20, shuffle=True
+    X_train, y_train, test_size=0.20, shuffle=True, random_state=42
 )
 
 IMG_HEIGHT = IMG_WIDTH = 32
 NUM_CLASSES: int = 100
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
 
+print(y_train.shape)
 # Make column vector into row vector
 y_train = y_train.reshape(
     -1,
 )
 
+early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
 ### EPOCHS ###
 write_header(["Epochs", "Time", "Accuracy"], "./trend_graph/CIFAR-100/epochs.csv")
 for epochs in range(10, 210, 10):
@@ -35,11 +37,13 @@ for epochs in range(10, 210, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
-
+    
     start = time.time()
     cnn.compile(
         optimizer=optimizers.SGD(),
@@ -47,7 +51,6 @@ for epochs in range(10, 210, 10):
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
@@ -83,7 +86,9 @@ for batch_size_power in range(4, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -95,7 +100,6 @@ for batch_size_power in range(4, 10):
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
@@ -131,7 +135,9 @@ for learning_rate_power in range(1, 6.5, 0.5):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -143,7 +149,6 @@ for learning_rate_power in range(1, 6.5, 0.5):
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
@@ -175,7 +180,9 @@ for momentum in range(0, 0.95, 0.05):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -187,7 +194,6 @@ for momentum in range(0, 0.95, 0.05):
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,

@@ -2,9 +2,9 @@ import sys
 
 sys.path.append(".")
 
-from keras import optimizers, losses, callbacks, layers, models
+from keras import optimizers, losses, callbacks, layers, models, applications
 from sklearn.model_selection import train_test_split
-from utility.Model import alex_net, preprocessing
+from utility.Model import preprocessing
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
@@ -15,17 +15,14 @@ X_test = np.load("./dataset/ImageNet/X_test.npy")
 y_test = np.load("./dataset/ImageNet/y_test.npy")
 
 X_train, X_val, y_train, y_val = train_test_split(
-    X_train, y_train, test_size=0.20, shuffle=True
+    X_train, y_train, test_size=0.20, shuffle=True, random_state=42
 )
 
 IMG_HEIGHT = IMG_WIDTH = 64
-NUM_CLASSES: int = 1000
+NUM_CLASSES: int = 200
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
 
-# Make column vector into row vector
-y_train = y_train.reshape(
-    -1,
-)
+early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
 
 ### EPOCHS ###
 
@@ -36,19 +33,20 @@ for epochs in range(10, 210, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
-
+    print(cnn.summary())
     start = time.time()
     cnn.compile(
-        optimizer=optimizers.legacy.SGD(),
-        loss=losses.SparseCategoricalCrossentropy(),
+        optimizer=optimizers.SGD(),
+        loss=losses.CategoricalCrossentropy(),
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
@@ -83,19 +81,20 @@ for batch_size_power in range(4, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
 
     start = time.time()
     cnn.compile(
-        optimizer=optimizers.legacy.SGD(),
-        loss=losses.SparseCategoricalCrossentropy(),
+        optimizer=optimizers.SGD(),
+        loss=losses.CategoricalCrossentropy(),
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
@@ -130,7 +129,9 @@ for learning_rate_power in range(1, 6.5, 0.5):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -138,11 +139,10 @@ for learning_rate_power in range(1, 6.5, 0.5):
     start = time.time()
     cnn.compile(
         optimizer=optimizers.SGD(learning_rate=learning_rate),
-        loss=losses.SparseCategoricalCrossentropy(),
+        loss=losses.CategoricalCrossentropy(),
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
@@ -174,7 +174,9 @@ for momentum in range(0, 0.95, 0.05):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            alex_net(),
+            applications.ResNet50V2(include_top=False, weights=None),
+            layers.GlobalAveragePooling2D(),
+            layers.Dropout(0.5),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -182,11 +184,10 @@ for momentum in range(0, 0.95, 0.05):
     start = time.time()
     cnn.compile(
         optimizer=optimizers.SGD(momentum=momentum),
-        loss=losses.SparseCategoricalCrossentropy(),
+        loss=losses.CategoricalCrossentropy(),
         metrics=["accuracy"],
     )
 
-    early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
     cnn.fit(
         X_train,
         y_train,
