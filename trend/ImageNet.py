@@ -14,12 +14,14 @@ y_train = np.load("./dataset/ImageNet/y_train.npy")
 X_test = np.load("./dataset/ImageNet/X_test.npy")
 y_test = np.load("./dataset/ImageNet/y_test.npy")
 
+
+X_train = applications.resnet_v2.preprocess_input(X_train)
+X_test = applications.resnet_v2.preprocess_input(X_test)
+
 X_train, X_val, y_train, y_val = train_test_split(
     X_train, y_train, test_size=0.20, shuffle=True, random_state=42
 )
 
-X_train = applications.resnet_v2.preprocess_input(X_train)
-X_test = applications.resnet_v2.preprocess_input(X_test)
 
 IMG_HEIGHT = IMG_WIDTH = 64
 NUM_CLASSES: int = 200
