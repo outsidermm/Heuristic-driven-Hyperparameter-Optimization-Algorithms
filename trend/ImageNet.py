@@ -18,6 +18,9 @@ X_train, X_val, y_train, y_val = train_test_split(
     X_train, y_train, test_size=0.20, shuffle=True, random_state=42
 )
 
+X_train = applications.resnet_v2.preprocess_input(X_train)
+X_test = applications.resnet_v2.preprocess_input(X_test)
+
 IMG_HEIGHT = IMG_WIDTH = 64
 NUM_CLASSES: int = 200
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
@@ -33,9 +36,8 @@ for epochs in range(10, 210, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -81,9 +83,8 @@ for batch_size_power in range(4, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -129,9 +130,8 @@ for learning_rate_power in range(1, 6.5, 0.5):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -174,9 +174,8 @@ for momentum in range(0, 0.95, 0.05):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )

@@ -14,6 +14,9 @@ y_train: np.ndarray = np.load("./dataset/CIFAR-100/y_train.npy")
 X_test: np.ndarray = np.load("./dataset/CIFAR-100/X_test.npy")
 y_test: np.ndarray = np.load("./dataset/CIFAR-100/y_test.npy")
 
+X_train = applications.resnet_v2.preprocess_input(X_train)
+X_test = applications.resnet_v2.preprocess_input(X_test)
+
 X_train, X_val, y_train, y_val = train_test_split(
     X_train, y_train, test_size=0.20, shuffle=True, random_state=42
 )
@@ -22,24 +25,18 @@ IMG_HEIGHT = IMG_WIDTH = 32
 NUM_CLASSES: int = 100
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
 
-print(y_train.shape)
-# Make column vector into row vector
-y_train = y_train.reshape(
-    -1,
-)
 
 early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
 ### EPOCHS ###
 write_header(["Epochs", "Time", "Accuracy"], "./trend_graph/CIFAR-100/epochs.csv")
-for epochs in range(10, 210, 10):
+for epochs in range(10, 260, 10):
     cnn = models.Sequential(
         [
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -86,9 +83,8 @@ for batch_size_power in range(4, 10):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -104,7 +100,7 @@ for batch_size_power in range(4, 10):
         X_train,
         y_train,
         batch_size=batch_size,
-        epochs=75,
+        epochs=100,
         verbose=2,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping],
@@ -135,9 +131,8 @@ for learning_rate_power in range(1, 6.5, 0.5):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -153,7 +148,7 @@ for learning_rate_power in range(1, 6.5, 0.5):
         X_train,
         y_train,
         batch_size=32,
-        epochs=75,
+        epochs=100,
         verbose=2,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping],
@@ -180,9 +175,8 @@ for momentum in range(0, 0.95, 0.05):
             layers.InputLayer(INPUT_SHAPE),
             layers.Resizing(224, 224),
             preprocessing(),
-            applications.ResNet50V2(include_top=False, weights=None),
-            layers.GlobalAveragePooling2D(),
-            layers.Dropout(0.5),
+            applications.ResNet50V2(include_top=False),
+            layers.GlobalMaxPooling2D(),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
@@ -198,7 +192,7 @@ for momentum in range(0, 0.95, 0.05):
         X_train,
         y_train,
         batch_size=32,
-        epochs=75,
+        epochs=100,
         verbose=2,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping],
