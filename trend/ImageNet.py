@@ -9,10 +9,10 @@ from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
 
-X_train = np.load("./dataset/ImageNet/X_train.npy")
-y_train = np.load("./dataset/ImageNet/y_train.npy")
-X_test = np.load("./dataset/ImageNet/X_test.npy")
-y_test = np.load("./dataset/ImageNet/y_test.npy")
+X_train: np.ndarray = np.load("./dataset/ImageNet/X_train.npy")
+y_train: np.ndarray = np.load("./dataset/ImageNet/y_train.npy")
+X_test: np.ndarray = np.load("./dataset/ImageNet/X_test.npy")
+y_test: np.ndarray = np.load("./dataset/ImageNet/y_test.npy")
 
 
 X_train = applications.resnet_v2.preprocess_input(X_train)
@@ -125,7 +125,7 @@ for batch_size_power in range(4, 10):
 write_header(
     ["learning_rate", "Time", "Accuracy"], "./trend_graph/ImageNet/learning_rate.csv"
 )
-for learning_rate_power in range(1, 6.5, 0.5):
+for learning_rate_power in np.linspace(1,6.5,11):
     learning_rate = 10**-learning_rate_power
     cnn = models.Sequential(
         [
@@ -170,7 +170,7 @@ for learning_rate_power in range(1, 6.5, 0.5):
 
 ### MOMENTUM ###
 write_header(["momentum", "Time", "Accuracy"], "./trend_graph/ImageNet/momentum.csv")
-for momentum in range(0, 0.95, 0.05):
+for momentum in np.linspace(0,0.95,0.05):
     cnn = models.Sequential(
         [
             layers.InputLayer(INPUT_SHAPE),

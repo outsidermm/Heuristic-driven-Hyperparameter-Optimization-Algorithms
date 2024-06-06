@@ -40,7 +40,7 @@ for epochs in range(10, 260, 10):
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
-    
+
     start = time.time()
     cnn.compile(
         optimizer=optimizers.SGD(),
@@ -123,7 +123,7 @@ for batch_size_power in range(4, 10):
 write_header(
     ["learning_rate", "Time", "Accuracy"], "./trend_graph/CIFAR-100/learning_rate.csv"
 )
-for learning_rate_power in range(1, 6.5, 0.5):
+for learning_rate_power in np.linspace(1,6.5,11):
     learning_rate = 10**-learning_rate_power
 
     cnn = models.Sequential(
@@ -169,7 +169,7 @@ for learning_rate_power in range(1, 6.5, 0.5):
 
 ### MOMENTUM ###
 write_header(["momentum", "Time", "Accuracy"], "./trend_graph/CIFAR-100/momentum.csv")
-for momentum in range(0, 0.95, 0.05):
+for momentum in np.linspace(0,0.95,0.05):
     cnn = models.Sequential(
         [
             layers.InputLayer(INPUT_SHAPE),
