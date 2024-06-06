@@ -1,4 +1,4 @@
-from keras import layers, models, applications
+from keras import layers, models
 
 
 def preprocessing() -> models.Sequential:
