@@ -25,11 +25,13 @@ IMG_HEIGHT = IMG_WIDTH = 32
 NUM_CLASSES: int = 100
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
 
+STD_EPOCH = 50
+STD_BATCH_SIZE = 64
 
 early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
 ### EPOCHS ###
 write_header(["Epochs", "Time", "Accuracy"], "./trend_graph/CIFAR-100/epochs.csv")
-for epochs in range(10, 260, 10):
+for epochs in range(20, 221, 40):
     cnn = models.Sequential(
         [
             layers.InputLayer(INPUT_SHAPE),
@@ -51,7 +53,7 @@ for epochs in range(10, 260, 10):
     cnn.fit(
         X_train,
         y_train,
-        batch_size=32,
+        batch_size=STD_BATCH_SIZE,
         epochs=epochs,
         verbose=2,
         validation_data=(X_val, y_val),
@@ -75,7 +77,7 @@ for epochs in range(10, 260, 10):
 write_header(
     ["Batch_size", "Time", "Accuracy"], "./trend_graph/CIFAR-100/batch_size.csv"
 )
-for batch_size_power in range(4, 10):
+for batch_size_power in range(4, 14, 2):
     batch_size = 2**batch_size_power
 
     cnn = models.Sequential(
@@ -100,7 +102,7 @@ for batch_size_power in range(4, 10):
         X_train,
         y_train,
         batch_size=batch_size,
-        epochs=100,
+        epochs=STD_EPOCH,
         verbose=2,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping],
@@ -114,7 +116,7 @@ for batch_size_power in range(4, 10):
     print(f"Time taken: {time_taken}, Accuracy: {accuracy}")
     write_csv(
         [{"Batch_size": batch_size, "Time": time_taken, "Accuracy": accuracy}],
-        ["Epochs", "Time", "Accuracy"],
+        ["Batch_size", "Time", "Accuracy"],
         "./trend_graph/CIFAR-100/batch_size.csv",
     )
 
@@ -123,7 +125,7 @@ for batch_size_power in range(4, 10):
 write_header(
     ["learning_rate", "Time", "Accuracy"], "./trend_graph/CIFAR-100/learning_rate.csv"
 )
-for learning_rate_power in np.linspace(1,6.5,11):
+for learning_rate_power in range(1, 7):
     learning_rate = 10**-learning_rate_power
 
     cnn = models.Sequential(
@@ -147,8 +149,8 @@ for learning_rate_power in np.linspace(1,6.5,11):
     cnn.fit(
         X_train,
         y_train,
-        batch_size=32,
-        epochs=100,
+        batch_size=STD_BATCH_SIZE,
+        epochs=STD_EPOCH,
         verbose=2,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping],
@@ -169,7 +171,7 @@ for learning_rate_power in np.linspace(1,6.5,11):
 
 ### MOMENTUM ###
 write_header(["momentum", "Time", "Accuracy"], "./trend_graph/CIFAR-100/momentum.csv")
-for momentum in np.linspace(0,0.95,0.05):
+for momentum in np.linspace(0, 0.9, 7):
     cnn = models.Sequential(
         [
             layers.InputLayer(INPUT_SHAPE),
@@ -191,8 +193,8 @@ for momentum in np.linspace(0,0.95,0.05):
     cnn.fit(
         X_train,
         y_train,
-        batch_size=32,
-        epochs=100,
+        batch_size=STD_BATCH_SIZE,
+        epochs=STD_EPOCH,
         verbose=2,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping],
