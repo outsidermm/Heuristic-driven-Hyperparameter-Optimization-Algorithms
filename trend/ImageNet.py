@@ -8,6 +8,7 @@ from utility.Model import preprocessing
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
+import tensorflow as tf
 
 X_train: np.ndarray = np.load("./dataset/ImageNet/X_train.npy")
 y_train: np.ndarray = np.load("./dataset/ImageNet/y_train.npy")
@@ -27,14 +28,17 @@ IMG_HEIGHT = IMG_WIDTH = 64
 NUM_CLASSES: int = 200
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
 
-STD_EPOCH = 50
-STD_BATCH_SIZE = 64
+distributed_strategy = tf.distribute.MirroredStrategy()
+NUM_DEVICE = distributed_strategy.num_replicas_in_sync
+
+STD_EPOCH = 500
+STD_BATCH_SIZE = 32 * NUM_DEVICE
 
 early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
 ### EPOCHS ###
 
 write_header(["Epochs", "Time", "Accuracy"], "./trend_graph/ImageNet/epochs.csv")
-for epochs in range(20, 221, 40):
+for epochs in range(100, 600, 100):
     cnn = models.Sequential(
         [
             layers.InputLayer(INPUT_SHAPE),

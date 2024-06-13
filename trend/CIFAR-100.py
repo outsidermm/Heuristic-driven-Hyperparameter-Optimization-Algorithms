@@ -8,6 +8,7 @@ from utility.Model import preprocessing
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
+import tensorflow as tf
 
 X_train: np.ndarray = np.load("./dataset/CIFAR-100/X_train.npy")
 y_train: np.ndarray = np.load("./dataset/CIFAR-100/y_train.npy")
@@ -25,31 +26,34 @@ IMG_HEIGHT = IMG_WIDTH = 32
 NUM_CLASSES: int = 100
 INPUT_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
 
-STD_EPOCH = 50
-STD_BATCH_SIZE = 64
+distributed_strategy = tf.distribute.MirroredStrategy()
+NUM_DEVICE = distributed_strategy.num_replicas_in_sync
 
-early_stopping = callbacks.EarlyStopping(monitor="loss", patience=5)
+STD_EPOCH = 500
+STD_BATCH_SIZE = 32 * NUM_DEVICE
+
 ### EPOCHS ###
 write_header(["Epochs", "Time", "Accuracy"], "./trend_graph/CIFAR-100/epochs.csv")
-for epochs in range(20, 221, 40):
-    cnn = models.Sequential(
-        [
-            layers.InputLayer(INPUT_SHAPE),
-            layers.Resizing(224, 224),
-            preprocessing(),
-            applications.ResNet50V2(include_top=False),
-            layers.GlobalMaxPooling2D(),
-            layers.Dense(NUM_CLASSES, activation="softmax"),
-        ]
-    )
+for epochs in range(100, 1601, 300):
+    with distributed_strategy.scope():
+        cnn = models.Sequential(
+            [
+                layers.InputLayer(INPUT_SHAPE),
+                layers.Resizing(224, 224),
+                preprocessing(),
+                applications.ResNet50V2(include_top=False),
+                layers.GlobalMaxPooling2D(),
+                layers.Dense(NUM_CLASSES, activation="softmax"),
+            ]
+        )
+
+        cnn.compile(
+            optimizer=optimizers.SGD(),
+            loss=losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
 
     start = time.time()
-    cnn.compile(
-        optimizer=optimizers.SGD(),
-        loss=losses.SparseCategoricalCrossentropy(),
-        metrics=["accuracy"],
-    )
-
     cnn.fit(
         X_train,
         y_train,
@@ -57,7 +61,6 @@ for epochs in range(20, 221, 40):
         epochs=epochs,
         verbose=2,
         validation_data=(X_val, y_val),
-        callbacks=[early_stopping],
     )
     end = time.time()
     time_taken = end - start
@@ -77,26 +80,29 @@ for epochs in range(20, 221, 40):
 write_header(
     ["Batch_size", "Time", "Accuracy"], "./trend_graph/CIFAR-100/batch_size.csv"
 )
-for batch_size_power in range(4, 14, 2):
-    batch_size = 2**batch_size_power
+for batch_size_power in range(3, 7):
+    batch_size = 2 ** (batch_size_power)
+    batch_size = batch_size * NUM_DEVICE
 
-    cnn = models.Sequential(
-        [
-            layers.InputLayer(INPUT_SHAPE),
-            layers.Resizing(224, 224),
-            preprocessing(),
-            applications.ResNet50V2(include_top=False),
-            layers.GlobalMaxPooling2D(),
-            layers.Dense(NUM_CLASSES, activation="softmax"),
-        ]
-    )
+    with distributed_strategy.scope():
+        cnn = models.Sequential(
+            [
+                layers.InputLayer(INPUT_SHAPE),
+                layers.Resizing(224, 224),
+                preprocessing(),
+                applications.ResNet50V2(include_top=False),
+                layers.GlobalMaxPooling2D(),
+                layers.Dense(NUM_CLASSES, activation="softmax"),
+            ]
+        )
+
+        cnn.compile(
+            optimizer=optimizers.SGD(),
+            loss=losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
 
     start = time.time()
-    cnn.compile(
-        optimizer=optimizers.SGD(),
-        loss=losses.SparseCategoricalCrossentropy(),
-        metrics=["accuracy"],
-    )
 
     cnn.fit(
         X_train,
@@ -105,7 +111,6 @@ for batch_size_power in range(4, 14, 2):
         epochs=STD_EPOCH,
         verbose=2,
         validation_data=(X_val, y_val),
-        callbacks=[early_stopping],
     )
     end = time.time()
     time_taken = end - start
@@ -128,23 +133,25 @@ write_header(
 for learning_rate_power in range(1, 7):
     learning_rate = 10**-learning_rate_power
 
-    cnn = models.Sequential(
-        [
-            layers.InputLayer(INPUT_SHAPE),
-            layers.Resizing(224, 224),
-            preprocessing(),
-            applications.ResNet50V2(include_top=False),
-            layers.GlobalMaxPooling2D(),
-            layers.Dense(NUM_CLASSES, activation="softmax"),
-        ]
-    )
+    with distributed_strategy.scope():
+        cnn = models.Sequential(
+            [
+                layers.InputLayer(INPUT_SHAPE),
+                layers.Resizing(224, 224),
+                preprocessing(),
+                applications.ResNet50V2(include_top=False),
+                layers.GlobalMaxPooling2D(),
+                layers.Dense(NUM_CLASSES, activation="softmax"),
+            ]
+        )
+
+        cnn.compile(
+            optimizer=optimizers.SGD(),
+            loss=losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
 
     start = time.time()
-    cnn.compile(
-        optimizer=optimizers.SGD(learning_rate=learning_rate),
-        loss=losses.SparseCategoricalCrossentropy(),
-        metrics=["accuracy"],
-    )
 
     cnn.fit(
         X_train,
@@ -153,7 +160,6 @@ for learning_rate_power in range(1, 7):
         epochs=STD_EPOCH,
         verbose=2,
         validation_data=(X_val, y_val),
-        callbacks=[early_stopping],
     )
     end = time.time()
     time_taken = end - start
@@ -172,23 +178,25 @@ for learning_rate_power in range(1, 7):
 ### MOMENTUM ###
 write_header(["momentum", "Time", "Accuracy"], "./trend_graph/CIFAR-100/momentum.csv")
 for momentum in np.linspace(0, 0.9, 7):
-    cnn = models.Sequential(
-        [
-            layers.InputLayer(INPUT_SHAPE),
-            layers.Resizing(224, 224),
-            preprocessing(),
-            applications.ResNet50V2(include_top=False),
-            layers.GlobalMaxPooling2D(),
-            layers.Dense(NUM_CLASSES, activation="softmax"),
-        ]
-    )
+    with distributed_strategy.scope():
+        cnn = models.Sequential(
+            [
+                layers.InputLayer(INPUT_SHAPE),
+                layers.Resizing(224, 224),
+                preprocessing(),
+                applications.ResNet50V2(include_top=False),
+                layers.GlobalMaxPooling2D(),
+                layers.Dense(NUM_CLASSES, activation="softmax"),
+            ]
+        )
+
+        cnn.compile(
+            optimizer=optimizers.SGD(),
+            loss=losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
 
     start = time.time()
-    cnn.compile(
-        optimizer=optimizers.SGD(momentum=momentum),
-        loss=losses.SparseCategoricalCrossentropy(),
-        metrics=["accuracy"],
-    )
 
     cnn.fit(
         X_train,
@@ -197,7 +205,6 @@ for momentum in np.linspace(0, 0.9, 7):
         epochs=STD_EPOCH,
         verbose=2,
         validation_data=(X_val, y_val),
-        callbacks=[early_stopping],
     )
     end = time.time()
     time_taken = end - start
