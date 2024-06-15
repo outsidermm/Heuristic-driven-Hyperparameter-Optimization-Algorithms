@@ -80,9 +80,9 @@ class HyperParameterSearch:
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.linspace(100, 1600, 6, endpoint=True)
+            search_space = np.arange(100, 1601, 300) # 100-1600, step 300
         elif self.__hyperparameter == "batch_size":
-            linear_search_space = np.linspace(3, 7, 5, endpoint=True)
+            linear_search_space = np.arange(3,8) # 3-7
             search_space = np.power(2, linear_search_space)
         elif self.__hyperparameter == "lr":
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
@@ -113,6 +113,7 @@ class HyperParameterSearch:
                 test_momentum = changing_hp
             else:
                 print("Wrong Hyperparameter Input!")
+            
             with self.__distributed_strategy.scope():
                 cnn = models.Sequential(
                     [
@@ -147,7 +148,7 @@ class HyperParameterSearch:
             end = time.time()
             time_taken = end - start
 
-            metrics = cnn.evaluate(self.__X_test, self.__y_test)
+            metrics = cnn.evaluate(self.__X_test, self.__y_test, batch_size=test_batch_size,return_dict=True)
             accuracy = metrics["accuracy"]
             top_1 = metrics["Top_1"]
             top_5 = metrics["Top_5"]
@@ -163,7 +164,7 @@ class HyperParameterSearch:
                         "Top5": top_5,
                     }
                 ],
-                [self.__hyperparameter, "Time", "Accuracy"],
+                [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
                 "./trend_graph/"
                 + self.__dataset
                 + "/"
