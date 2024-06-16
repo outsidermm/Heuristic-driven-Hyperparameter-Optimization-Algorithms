@@ -11,10 +11,11 @@ import numpy as np
 import tensorflow as tf
 
 TOP_1 = metrics.TopKCategoricalAccuracy(k=1, name="Top_1")
-TOP_5 = metrics.TopKCategoricalAccuracy(k=5, name="Top_5")
+TOP_5 = metrics.TopKCategoricalAccuracy(k=5, name="Top_5") 
 TOP_1_SPARSE = metrics.SparseTopKCategoricalAccuracy(k=1, name="Top_1")
 TOP_5_SPARSE = metrics.SparseTopKCategoricalAccuracy(k=5, name="Top_5")
-
+LOSS = losses.CategoricalCrossentropy()
+LOSS_SPARSE = losses.SparseCategoricalCrossentropy()
 
 class HyperParameterSearch:
 
@@ -74,13 +75,15 @@ class HyperParameterSearch:
     def training(self) -> None:
         top_1_metrics = TOP_1
         top_5_metrics = TOP_5
+        loss_function = LOSS
         if self.__dataset == "CIFAR-100":
             top_1_metrics = TOP_1_SPARSE
             top_5_metrics = TOP_5_SPARSE
+            loss_function = LOSS_SPARSE
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.arange(100, 1601, 300) # 100-1600, step 300
+            search_space = np.arange(20, 501, 60) # 100-1600, step 300
         elif self.__hyperparameter == "batch_size":
             linear_search_space = np.arange(3,8) # 3-7
             search_space = np.power(2, linear_search_space)
@@ -107,7 +110,7 @@ class HyperParameterSearch:
                 test_epoch = changing_hp
             elif self.__hyperparameter == "batch_size":
                 test_batch_size = changing_hp
-            elif self.__hyperparameter == "learning_rate":
+            elif self.__hyperparameter == "lr":
                 test_lr = changing_hp
             elif self.__hyperparameter == "momentum":
                 test_momentum = changing_hp
@@ -123,7 +126,9 @@ class HyperParameterSearch:
                         applications.ResNet50V2(
                             include_top=False, weights=self.__pre_trained_weight
                         ),
-                        layers.GlobalMaxPooling2D(),
+                        layers.GlobalAveragePooling2D(),
+                        layers.Flatten(),
+                        layers.Dropout(0.5),
                         layers.Dense(self.__num_classes, activation="softmax"),
                     ]
                 )
@@ -132,7 +137,7 @@ class HyperParameterSearch:
                     optimizer=optimizers.SGD(
                         learning_rate=test_lr, momentum=test_momentum
                     ),
-                    loss=losses.SparseCategoricalCrossentropy(),
+                    loss=loss_function,
                     metrics=["accuracy", top_1_metrics, top_5_metrics],
                 )
 

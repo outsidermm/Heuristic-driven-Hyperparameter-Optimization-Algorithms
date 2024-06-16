@@ -1,6 +1,6 @@
 from hyperparameter_search import HyperParameterSearch
 
-STD_EPOCH = 500
+STD_EPOCH = 75
 STD_BATCH_SIZE = 32
 STD_LR = 0.01
 STD_MOMENTUM = 0.0
@@ -24,6 +24,7 @@ if __name__ == "__main__":
         batch_size=STD_BATCH_SIZE,
         lr=STD_LR,
         momentum=STD_MOMENTUM,
+        verbose=1,
     )
     imagenet_epoch.load_dataset()
     imagenet_epoch.training()
