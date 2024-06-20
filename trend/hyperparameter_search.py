@@ -2,20 +2,22 @@ import sys
 
 sys.path.append(".")
 
-from keras import optimizers, losses, models, layers, applications, metrics
+from keras import optimizers, losses, metrics, callbacks, applications
 from sklearn.model_selection import train_test_split
-from utility.Model import preprocessing
+from utility.Model import data_augmentation, ResNet34
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
 import tensorflow as tf
+from sklearn import preprocessing
 
 TOP_1 = metrics.TopKCategoricalAccuracy(k=1, name="Top_1")
-TOP_5 = metrics.TopKCategoricalAccuracy(k=5, name="Top_5") 
+TOP_5 = metrics.TopKCategoricalAccuracy(k=5, name="Top_5")
 TOP_1_SPARSE = metrics.SparseTopKCategoricalAccuracy(k=1, name="Top_1")
 TOP_5_SPARSE = metrics.SparseTopKCategoricalAccuracy(k=5, name="Top_5")
 LOSS = losses.CategoricalCrossentropy()
 LOSS_SPARSE = losses.SparseCategoricalCrossentropy()
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 class HyperParameterSearch:
 
@@ -26,7 +28,6 @@ class HyperParameterSearch:
         img_height: int,
         img_width: int,
         num_classes: int,
-        pre_trained_weight="imagenet",
         epoch: int = 500,
         batch_size: int = 32,
         lr: float = 0.01,
@@ -38,7 +39,6 @@ class HyperParameterSearch:
         self.__img_height = img_height
         self.__img_width = img_width
         self.__num_classes = num_classes
-        self.__pre_trained_weight = pre_trained_weight
         self.__input_shape = (img_height, img_width, 3)
         self.__epoch = epoch
         self.__batch_size = batch_size
@@ -62,14 +62,27 @@ class HyperParameterSearch:
         self.__y_test: np.ndarray = np.load(
             "./dataset/" + self.__dataset + "/y_test.npy"
         )
-        self.__X_train = applications.resnet_v2.preprocess_input(self.__X_train)
-        self.__X_test = applications.resnet_v2.preprocess_input(self.__X_test)
         self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(
             self.__X_train,
             self.__y_train,
             test_size=0.20,
             shuffle=True,
             random_state=42,
+        )
+
+        print(self.__X_train.shape)
+        data_augmentation_layer = data_augmentation()
+        augmented_images = data_augmentation_layer(self.__X_train)
+
+        self.__X_train = np.concatenate([self.__X_train, augmented_images], axis=0)
+        self.__y_train = np.concatenate([self.__y_train, self.__y_train], axis=0)
+
+        self.__train_ds = tf.data.Dataset.from_tensor_slices(
+            (self.__X_train, self.__y_train)
+        )
+        self.__val_ds = tf.data.Dataset.from_tensor_slices((self.__X_val, self.__y_val))
+        self.__test_ds = tf.data.Dataset.from_tensor_slices(
+            (self.__X_test, self.__y_test)
         )
 
     def training(self) -> None:
@@ -83,9 +96,9 @@ class HyperParameterSearch:
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.arange(20, 501, 60) # 100-1600, step 300
+            search_space = np.arange(20, 161, 8)  # 100-1600, step 300
         elif self.__hyperparameter == "batch_size":
-            linear_search_space = np.arange(3,8) # 3-7
+            linear_search_space = np.arange(3, 8)  # 3-7
             search_space = np.power(2, linear_search_space)
         elif self.__hyperparameter == "lr":
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
@@ -99,6 +112,14 @@ class HyperParameterSearch:
         test_batch_size = self.__batch_size
         test_lr = self.__lr
         test_momentum = self.__momentum
+
+        self.__train_ds = self.__train_ds.batch(test_batch_size)
+        self.__val_ds = self.__val_ds.batch(test_batch_size)
+        self.__test_ds = self.__test_ds.batch(test_batch_size)
+
+        self.__train_ds = self.__train_ds.cache().prefetch(buffer_size=AUTOTUNE)
+        self.__val_ds = self.__val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+        self.__test_ds = self.__test_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
         write_header(
             [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
@@ -116,22 +137,10 @@ class HyperParameterSearch:
                 test_momentum = changing_hp
             else:
                 print("Wrong Hyperparameter Input!")
-            
+
             with self.__distributed_strategy.scope():
-                cnn = models.Sequential(
-                    [
-                        layers.InputLayer(self.__input_shape),
-                        layers.Resizing(224, 224),
-                        preprocessing(),
-                        applications.ResNet50V2(
-                            include_top=False, weights=self.__pre_trained_weight
-                        ),
-                        layers.GlobalAveragePooling2D(),
-                        layers.Flatten(),
-                        layers.Dropout(0.5),
-                        layers.Dense(self.__num_classes, activation="softmax"),
-                    ]
-                )
+                cnn = ResNet34(shape=self.__input_shape, classes=self.__num_classes)
+                cnn.summary()
 
                 cnn.compile(
                     optimizer=optimizers.SGD(
@@ -141,19 +150,46 @@ class HyperParameterSearch:
                     metrics=["accuracy", top_1_metrics, top_5_metrics],
                 )
 
+            log = open(
+                "./trend_graph/"
+                + self.__dataset
+                + "/"
+                + self.__hyperparameter
+                + "_"
+                + str(changing_hp)
+                + "_log.csv",
+                "a",
+            )
+            log.close()
+
+            logger = callbacks.CSVLogger(
+                "./trend_graph/"
+                + self.__dataset
+                + "/"
+                + self.__hyperparameter
+                + "_"
+                + str(changing_hp)
+                + "_log.csv"
+            )
+
             start = time.time()
             cnn.fit(
-                self.__X_train,
-                self.__y_train,
+                self.__train_ds,
                 batch_size=test_batch_size,
                 epochs=test_epoch,
                 verbose=self.__verbose,
-                validation_data=(self.__X_val, self.__y_val),
+                validation_data=(self.__val_ds),
+                callbacks=[logger],
             )
             end = time.time()
             time_taken = end - start
 
-            metrics = cnn.evaluate(self.__X_test, self.__y_test, batch_size=test_batch_size,return_dict=True)
+            metrics = cnn.evaluate(
+                self.__test_ds,
+                batch_size=test_batch_size,
+                return_dict=True,
+            )
+
             accuracy = metrics["accuracy"]
             top_1 = metrics["Top_1"]
             top_5 = metrics["Top_5"]
