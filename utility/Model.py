@@ -10,6 +10,12 @@ def data_augmentation() -> models.Sequential:
     return preprocessing
 
 
+def normalisation() -> models.Sequential:
+    normalisation = models.Sequential()
+    normalisation.add(layers.Rescaling(scale=1.0 / 127.5, offset=-1))
+    return normalisation
+
+
 def identity_block(x, filter):
     # copy tensor to variable called x_skip
     x_skip = x
@@ -23,6 +29,7 @@ def identity_block(x, filter):
     # Add Residue
     x = layers.Add()([x, x_skip])
     x = layers.Activation("relu")(x)
+    x = layers.Dropout(0.5)(x)
     return x
 
 
@@ -44,18 +51,17 @@ def convolutional_block(x, filter):
     return x
 
 
-def ResNet34(shape=(32, 32, 3), classes=10):
+def ResNet18(shape=(32, 32, 3), classes=10):
     # Step 1 (Setup Input Layer)
     x_input = layers.Input(shape)
-    x = layers.Rescaling(scale=1./127.5,offset=-1)(x_input)
-    x = layers.ZeroPadding2D((3, 3))(x)
+    x = layers.ZeroPadding2D((3, 3))(x_input)
     # Step 2 (Initial Conv layer along with maxPool)
     x = layers.Conv2D(64, kernel_size=7, strides=2, padding="same")(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
     x = layers.MaxPool2D(pool_size=3, strides=2, padding="same")(x)
     # Define size of sub-blocks and initial filter size
-    block_layers = [3, 4, 6, 3]
+    block_layers = [2, 2, 2, 2]
     filter_size = 64
     # Step 3 Add the Resnet Blocks
     for i in range(4):

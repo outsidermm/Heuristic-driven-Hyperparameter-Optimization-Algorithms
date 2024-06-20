@@ -2,14 +2,13 @@ import sys
 
 sys.path.append(".")
 
-from keras import optimizers, losses, metrics, callbacks, applications
+from keras import optimizers, losses, metrics, callbacks
 from sklearn.model_selection import train_test_split
-from utility.Model import data_augmentation, ResNet34
+from utility.Model import data_augmentation, ResNet18, normalisation
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
 import tensorflow as tf
-from sklearn import preprocessing
 
 TOP_1 = metrics.TopKCategoricalAccuracy(k=1, name="Top_1")
 TOP_5 = metrics.TopKCategoricalAccuracy(k=5, name="Top_5")
@@ -18,6 +17,7 @@ TOP_5_SPARSE = metrics.SparseTopKCategoricalAccuracy(k=5, name="Top_5")
 LOSS = losses.CategoricalCrossentropy()
 LOSS_SPARSE = losses.SparseCategoricalCrossentropy()
 AUTOTUNE = tf.data.experimental.AUTOTUNE
+
 
 class HyperParameterSearch:
 
@@ -62,15 +62,18 @@ class HyperParameterSearch:
         self.__y_test: np.ndarray = np.load(
             "./dataset/" + self.__dataset + "/y_test.npy"
         )
+
         self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(
             self.__X_train,
             self.__y_train,
             test_size=0.20,
-            shuffle=True,
             random_state=42,
         )
 
-        print(self.__X_train.shape)
+        self.__X_train = normalisation()(self.__X_train)
+        self.__X_val = normalisation()(self.__X_val)
+        self.__X_test = normalisation()(self.__X_test)
+
         data_augmentation_layer = data_augmentation()
         augmented_images = data_augmentation_layer(self.__X_train)
 
@@ -96,7 +99,7 @@ class HyperParameterSearch:
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.arange(20, 161, 8)  # 100-1600, step 300
+            search_space = np.arange(20, 501, 40)  # 20-160, step 20
         elif self.__hyperparameter == "batch_size":
             linear_search_space = np.arange(3, 8)  # 3-7
             search_space = np.power(2, linear_search_space)
@@ -139,7 +142,7 @@ class HyperParameterSearch:
                 print("Wrong Hyperparameter Input!")
 
             with self.__distributed_strategy.scope():
-                cnn = ResNet34(shape=self.__input_shape, classes=self.__num_classes)
+                cnn = ResNet18(shape=self.__input_shape, classes=self.__num_classes)
                 cnn.summary()
 
                 cnn.compile(
