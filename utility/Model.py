@@ -1,86 +1,96 @@
-from keras import layers, models
+from keras import layers, models, regularizers
 
 
 def data_augmentation() -> models.Sequential:
     preprocessing = models.Sequential()
     # Preprocessing - Data Augmentation
-    preprocessing.add(layers.RandomContrast(factor=0.5, seed=42))
-    preprocessing.add(layers.RandomFlip(seed=42))
+    preprocessing.add(layers.RandomContrast(factor=0.2, seed=42))
+    preprocessing.add(layers.RandomFlip(mode="HORIZONTAL", seed=42))
+    preprocessing.add(layers.RandomRotation(factor=0.1, seed=42))
+    preprocessing.add(
+        layers.RandomTranslation(height_factor=0.1, width_factor=0.1, seed=42)
+    )
 
     return preprocessing
 
 
 def normalisation() -> models.Sequential:
     normalisation = models.Sequential()
-    normalisation.add(layers.Rescaling(scale=1.0 / 127.5, offset=-1))
+    normalisation.add(layers.Rescaling(scale=1.0 / 255))
     return normalisation
 
 
-def identity_block(x, filter):
-    # copy tensor to variable called x_skip
-    x_skip = x
-    # Layer 1
-    x = layers.Conv2D(filter, (3, 3), padding="same")(x)
-    x = layers.BatchNormalization(axis=3)(x)
-    x = layers.Activation("relu")(x)
-    # Layer 2
-    x = layers.Conv2D(filter, (3, 3), padding="same")(x)
-    x = layers.BatchNormalization(axis=3)(x)
-    # Add Residue
-    x = layers.Add()([x, x_skip])
-    x = layers.Activation("relu")(x)
-    x = layers.Dropout(0.5)(x)
-    return x
+def add_layer(model, num, dropout=True, weight_decay=0.0005):
+    model.add(
+        layers.Conv2D(
+            num,
+            (3, 3),
+            padding="same",
+            kernel_regularizer=regularizers.l2(weight_decay),
+        )
+    )
+    model.add(layers.Activation("relu"))
+    model.add(layers.BatchNormalization())
+    if dropout:
+        model.add(layers.Dropout(0.4))
+    return model
 
 
-def convolutional_block(x, filter):
-    # copy tensor to variable called x_skip
-    x_skip = x
-    # Layer 1
-    x = layers.Conv2D(filter, (3, 3), padding="same", strides=(2, 2))(x)
-    x = layers.BatchNormalization(axis=3)(x)
-    x = layers.Activation("relu")(x)
-    # Layer 2
-    x = layers.Conv2D(filter, (3, 3), padding="same")(x)
-    x = layers.BatchNormalization(axis=3)(x)
-    # Processing Residue with conv(1,1)
-    x_skip = layers.Conv2D(filter, (1, 1), strides=(2, 2))(x_skip)
-    # Add Residue
-    x = layers.Add()([x, x_skip])
-    x = layers.Activation("relu")(x)
-    return x
+def VGG16(input_shape, num_class, weight_decay=0.0005):
 
+    model = models.Sequential()
+    model.add(layers.Input(shape=input_shape))
+    model.add(
+        layers.Conv2D(
+            64,
+            (3, 3),
+            padding="same",
+            kernel_regularizer=regularizers.l2(weight_decay),
+        )
+    )
+    model.add(layers.Activation("relu"))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Dropout(0.3))
 
-def ResNet18(shape=(32, 32, 3), classes=10):
-    # Step 1 (Setup Input Layer)
-    x_input = layers.Input(shape)
-    x = layers.ZeroPadding2D((3, 3))(x_input)
-    # Step 2 (Initial Conv layer along with maxPool)
-    x = layers.Conv2D(64, kernel_size=7, strides=2, padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation("relu")(x)
-    x = layers.MaxPool2D(pool_size=3, strides=2, padding="same")(x)
-    # Define size of sub-blocks and initial filter size
-    block_layers = [2, 2, 2, 2]
-    filter_size = 64
-    # Step 3 Add the Resnet Blocks
-    for i in range(4):
-        if i == 0:
-            # For sub-block 1 Residual/Convolutional block not needed
-            for j in range(block_layers[i]):
-                x = identity_block(x, filter_size)
-        else:
-            # One Residual/Convolutional Block followed by Identity blocks
-            # The filter size will go on increasing by a factor of 2
-            filter_size = filter_size * 2
-            x = convolutional_block(x, filter_size)
-            for j in range(block_layers[i] - 1):
-                x = identity_block(x, filter_size)
-    # Step 4 End Dense Network
-    x = layers.AveragePooling2D((2, 2), padding="same")(x)
-    x = layers.Flatten()(x)
-    x = layers.Dense(512, activation="relu")(x)
-    x = layers.Dropout(0.5)(x)
-    x = layers.Dense(classes, activation="softmax")(x)
-    model = models.Model(inputs=x_input, outputs=x, name="ResNet34")
+    model = add_layer(model, 64, dropout=False)
+
+    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    model = add_layer(model, 128, dropout=True)
+
+    model = add_layer(model, 128, dropout=False)
+
+    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    model = add_layer(model, 256, dropout=True)
+
+    model = add_layer(model, 256, dropout=True)
+
+    model = add_layer(model, 256, dropout=False)
+
+    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+
+    model = add_layer(model, 512, dropout=True)
+
+    model = add_layer(model, 512, dropout=True)
+
+    model = add_layer(model, 512, dropout=False)
+
+    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    model = add_layer(model, 512, dropout=True)
+
+    model = add_layer(model, 512, dropout=True)
+
+    model = add_layer(model, 512, dropout=False)
+
+    model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    model.add(layers.Dropout(0.5))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(512, kernel_regularizer=regularizers.l2(weight_decay)))
+    model.add(layers.Activation("relu"))
+    model.add(layers.BatchNormalization())
+
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(num_class))
+    model.add(layers.Activation("softmax"))
+
     return model

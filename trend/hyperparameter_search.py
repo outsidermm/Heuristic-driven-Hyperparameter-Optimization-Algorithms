@@ -4,7 +4,7 @@ sys.path.append(".")
 
 from keras import optimizers, losses, metrics, callbacks
 from sklearn.model_selection import train_test_split
-from utility.Model import data_augmentation, ResNet18, normalisation
+from utility.Model import data_augmentation, VGG16, normalisation
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
@@ -66,7 +66,7 @@ class HyperParameterSearch:
         self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(
             self.__X_train,
             self.__y_train,
-            test_size=0.20,
+            test_size=0.40,
             random_state=42,
         )
 
@@ -77,9 +77,10 @@ class HyperParameterSearch:
         data_augmentation_layer = data_augmentation()
         augmented_images = data_augmentation_layer(self.__X_train)
 
+
         self.__X_train = np.concatenate([self.__X_train, augmented_images], axis=0)
         self.__y_train = np.concatenate([self.__y_train, self.__y_train], axis=0)
-
+        
         self.__train_ds = tf.data.Dataset.from_tensor_slices(
             (self.__X_train, self.__y_train)
         )
@@ -99,7 +100,7 @@ class HyperParameterSearch:
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.arange(20, 501, 40)  # 20-160, step 20
+            search_space = np.arange(20, 341, 80)  # 20-160, step 20
         elif self.__hyperparameter == "batch_size":
             linear_search_space = np.arange(3, 8)  # 3-7
             search_space = np.power(2, linear_search_space)
@@ -142,7 +143,7 @@ class HyperParameterSearch:
                 print("Wrong Hyperparameter Input!")
 
             with self.__distributed_strategy.scope():
-                cnn = ResNet18(shape=self.__input_shape, classes=self.__num_classes)
+                cnn = VGG16(input_shape=self.__input_shape, num_class=self.__num_classes)
                 cnn.summary()
 
                 cnn.compile(

@@ -1,7 +1,7 @@
 from hyperparameter_search import HyperParameterSearch
 
-STD_EPOCH = 50
-STD_BATCH_SIZE = 32
+STD_EPOCH = 200
+STD_BATCH_SIZE = 64
 STD_LR = 0.01
 STD_MOMENTUM = 0.0
 
