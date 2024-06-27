@@ -77,10 +77,9 @@ class HyperParameterSearch:
         data_augmentation_layer = data_augmentation()
         augmented_images = data_augmentation_layer(self.__X_train)
 
-
         self.__X_train = np.concatenate([self.__X_train, augmented_images], axis=0)
         self.__y_train = np.concatenate([self.__y_train, self.__y_train], axis=0)
-        
+
         self.__train_ds = tf.data.Dataset.from_tensor_slices(
             (self.__X_train, self.__y_train)
         )
@@ -144,7 +143,9 @@ class HyperParameterSearch:
                 print("Wrong Hyperparameter Input!")
 
             with self.__distributed_strategy.scope():
-                cnn = VGG16(input_shape=self.__input_shape, num_class=self.__num_classes)
+                cnn = VGG16(
+                    input_shape=self.__input_shape, num_class=self.__num_classes
+                )
                 cnn.summary()
 
                 cnn.compile(
