@@ -2,7 +2,7 @@ import sys
 
 sys.path.append(".")
 
-from keras import optimizers, losses, metrics, callbacks
+from keras import optimizers, losses, metrics, callbacks, backend
 from sklearn.model_selection import train_test_split
 from utility.Model import data_augmentation, VGG16, normalisation
 from utility.DataAnalysis import write_csv, write_header
@@ -100,7 +100,7 @@ class HyperParameterSearch:
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.arange(20, 341, 80)  # 20-160, step 20
+            search_space = np.arange(20, 381, step=90)
         elif self.__hyperparameter == "batch_size":
             linear_search_space = np.arange(3, 8)  # 3-7
             search_space = np.power(2, linear_search_space)
@@ -131,6 +131,7 @@ class HyperParameterSearch:
         )
 
         for changing_hp in search_space:
+            backend.clear_session()
             if self.__hyperparameter == "epoch":
                 test_epoch = changing_hp
             elif self.__hyperparameter == "batch_size":
