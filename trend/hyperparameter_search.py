@@ -126,7 +126,7 @@ class HyperParameterSearch:
 
         write_header(
             [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
-            "./trend_graph/" + self.__dataset + "/" + self.__hyperparameter + ".csv",
+            "./trend/" + self.__dataset + "/" + self.__hyperparameter + ".csv",
         )
 
         for changing_hp in search_space:
@@ -157,7 +157,7 @@ class HyperParameterSearch:
                 )
 
             log = open(
-                "./trend_graph/"
+                "./trend/"
                 + self.__dataset
                 + "/"
                 + self.__hyperparameter
@@ -169,7 +169,7 @@ class HyperParameterSearch:
             log.close()
 
             logger = callbacks.CSVLogger(
-                "./trend_graph/"
+                "./trend/"
                 + self.__dataset
                 + "/"
                 + self.__hyperparameter
@@ -212,7 +212,7 @@ class HyperParameterSearch:
                     }
                 ],
                 [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
-                "./trend_graph/"
+                "./trend/"
                 + self.__dataset
                 + "/"
                 + self.__hyperparameter

@@ -1,5 +1,5 @@
 from grid_search import GridSearch
-import const
+import utility.const as const
 
 if __name__ == "__main__":
     cifar_100 = GridSearch(

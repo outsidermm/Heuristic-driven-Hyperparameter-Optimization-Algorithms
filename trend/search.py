@@ -1,5 +1,5 @@
 from hyperparameter_search import HyperParameterSearch
-import const
+import utility.const as const
 
 if __name__ == "__main__":
     cifar_100_epoch = HyperParameterSearch(
