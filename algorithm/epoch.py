@@ -107,8 +107,3 @@ class EpochTuner:
                 right = mid
 
         return best_epoch, best_efficiency
-
-
-epoch_tuner = EpochTuner(20, 24)
-best_epoch, best_efficiency = epoch_tuner.binary_search_efficient_epoch()
-print(best_epoch, best_efficiency)
