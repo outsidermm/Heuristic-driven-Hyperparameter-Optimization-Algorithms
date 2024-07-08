@@ -4,7 +4,7 @@ sys.path.append(".")
 
 from keras import optimizers, losses, metrics, callbacks, backend
 from sklearn.model_selection import train_test_split
-from utility.Model import data_augmentation, VGG16, normalisation
+from utility.Model import VGG16, normalisation
 from utility.DataAnalysis import write_csv, write_header
 import time
 import numpy as np
@@ -48,6 +48,7 @@ class HyperParameterSearch:
         self.__num_device = self.__distributed_strategy.num_replicas_in_sync
         self.__batch_size *= self.__num_device
         self.__verbose = verbose
+        backend.clear_session()
 
     def load_dataset(self) -> None:
         self.__X_train: np.ndarray = np.load(
@@ -74,10 +75,7 @@ class HyperParameterSearch:
         self.__X_val = normalisation()(self.__X_val)
         self.__X_test = normalisation()(self.__X_test)
 
-        data_augmentation_layer = data_augmentation()
-        augmented_images = data_augmentation_layer(self.__X_train)
-
-        self.__X_train = np.concatenate([self.__X_train, augmented_images], axis=0)
+        self.__X_train = np.concatenate([self.__X_train, self.__X_train], axis=0)
         self.__y_train = np.concatenate([self.__y_train, self.__y_train], axis=0)
 
         self.__train_ds = tf.data.Dataset.from_tensor_slices(
@@ -101,7 +99,7 @@ class HyperParameterSearch:
         if self.__hyperparameter == "epoch":
             search_space = np.arange(20, 381, step=90)
         elif self.__hyperparameter == "batch_size":
-            linear_search_space = np.arange(3, 8)  # 3-7
+            linear_search_space = np.arange(3, 9)  # 8-256
             search_space = np.power(2, linear_search_space)
         elif self.__hyperparameter == "lr":
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
@@ -212,9 +210,5 @@ class HyperParameterSearch:
                     }
                 ],
                 [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
-                "./trend/"
-                + self.__dataset
-                + "/"
-                + self.__hyperparameter
-                + ".csv",
+                "./trend/" + self.__dataset + "/" + self.__hyperparameter + ".csv",
             )
