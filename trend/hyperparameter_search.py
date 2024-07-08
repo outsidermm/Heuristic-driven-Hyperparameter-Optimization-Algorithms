@@ -99,7 +99,7 @@ class HyperParameterSearch:
         if self.__hyperparameter == "epoch":
             search_space = np.arange(20, 381, step=90)
         elif self.__hyperparameter == "batch_size":
-            linear_search_space = np.arange(3, 9)  # 8-256
+            linear_search_space = np.arange(4, 24,2)  # 8-256
             search_space = np.power(2, linear_search_space)
         elif self.__hyperparameter == "lr":
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
