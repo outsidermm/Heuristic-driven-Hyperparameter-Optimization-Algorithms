@@ -3,9 +3,8 @@ import sys
 sys.path.append(".")
 
 from keras import optimizers, losses, metrics, callbacks, backend
-from sklearn.model_selection import train_test_split
-from utility.Model import VGG16, normalisation
-from utility.DataAnalysis import write_csv, write_header
+from utility.model import VGG16
+from utility.helper_func import write_csv, write_header
 import time
 import numpy as np
 import tensorflow as tf
@@ -25,21 +24,17 @@ class HyperParameterSearch:
         self,
         dataset: str,
         hyperparameter: str,
-        img_height: int,
-        img_width: int,
-        num_classes: int,
+        train_ds: tf.data.Dataset,
+        val_ds: tf.data.Dataset,
+        test_ds: tf.data.Dataset,
         epoch: int = 500,
-        batch_size: int = 32,
+        batch_size: int = 16384,
         lr: float = 0.01,
-        momentum: float = 0.0,
+        momentum: float = 0.9,
         verbose: int = 2,
     ) -> None:
         self.__dataset = dataset
         self.__hyperparameter = hyperparameter
-        self.__img_height = img_height
-        self.__img_width = img_width
-        self.__num_classes = num_classes
-        self.__input_shape = (img_height, img_width, 3)
         self.__epoch = epoch
         self.__batch_size = batch_size
         self.__momentum = momentum
@@ -48,58 +43,22 @@ class HyperParameterSearch:
         self.__num_device = self.__distributed_strategy.num_replicas_in_sync
         self.__batch_size *= self.__num_device
         self.__verbose = verbose
+        self.__train_ds = train_ds
+        self.__val_ds = val_ds
+        self.__test_ds = test_ds
+        self.__input_shape = (64, 64, 3) if dataset == "imagenet" else (32, 32, 3)
         backend.clear_session()
 
-    def load_dataset(self) -> None:
-        self.__X_train: np.ndarray = np.load(
-            "./dataset/" + self.__dataset + "/X_train.npy"
-        )
-        self.__y_train: np.ndarray = np.load(
-            "./dataset/" + self.__dataset + "/y_train.npy"
-        )
-        self.__X_test: np.ndarray = np.load(
-            "./dataset/" + self.__dataset + "/X_test.npy"
-        )
-        self.__y_test: np.ndarray = np.load(
-            "./dataset/" + self.__dataset + "/y_test.npy"
-        )
-
-        self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(
-            self.__X_train,
-            self.__y_train,
-            test_size=0.40,
-            random_state=42,
-        )
-
-        self.__X_train = normalisation()(self.__X_train)
-        self.__X_val = normalisation()(self.__X_val)
-        self.__X_test = normalisation()(self.__X_test)
-
-        self.__X_train = np.concatenate([self.__X_train, self.__X_train], axis=0)
-        self.__y_train = np.concatenate([self.__y_train, self.__y_train], axis=0)
-
-        self.__train_ds = tf.data.Dataset.from_tensor_slices(
-            (self.__X_train, self.__y_train)
-        )
-        self.__val_ds = tf.data.Dataset.from_tensor_slices((self.__X_val, self.__y_val))
-        self.__test_ds = tf.data.Dataset.from_tensor_slices(
-            (self.__X_test, self.__y_test)
-        )
-
     def training(self) -> None:
-        top_1_metrics = TOP_1
-        top_5_metrics = TOP_5
-        loss_function = LOSS
-        if self.__dataset == "CIFAR-100":
-            top_1_metrics = TOP_1_SPARSE
-            top_5_metrics = TOP_5_SPARSE
-            loss_function = LOSS_SPARSE
+        top_1_metrics = TOP_1 if self.__dataset == "imagenet" else TOP_1_SPARSE
+        top_5_metrics = TOP_5 if self.__dataset == "imagenet" else TOP_5_SPARSE
+        loss_function = LOSS if self.__dataset == "imagenet" else LOSS_SPARSE
 
         search_space = None
         if self.__hyperparameter == "epoch":
             search_space = np.arange(20, 381, step=90)
         elif self.__hyperparameter == "batch_size":
-            linear_search_space = np.arange(4, 24,2)  # 8-256
+            linear_search_space = np.arange(4, 14, 2)  # 16 to 4096
             search_space = np.power(2, linear_search_space)
         elif self.__hyperparameter == "lr":
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
@@ -113,14 +72,6 @@ class HyperParameterSearch:
         test_batch_size = self.__batch_size
         test_lr = self.__lr
         test_momentum = self.__momentum
-
-        self.__train_ds = self.__train_ds.batch(test_batch_size)
-        self.__val_ds = self.__val_ds.batch(test_batch_size)
-        self.__test_ds = self.__test_ds.batch(test_batch_size)
-
-        self.__train_ds = self.__train_ds.cache().prefetch(buffer_size=AUTOTUNE)
-        self.__val_ds = self.__val_ds.cache().prefetch(buffer_size=AUTOTUNE)
-        self.__test_ds = self.__test_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
         write_header(
             [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
@@ -139,6 +90,14 @@ class HyperParameterSearch:
                 test_momentum = changing_hp
             else:
                 print("Wrong Hyperparameter Input!")
+
+            train_ds = self.__train_ds.batch(test_batch_size)
+            val_ds = self.__val_ds.batch(test_batch_size)
+            test_ds = self.__test_ds.batch(test_batch_size)
+
+            train_ds = train_ds.cache().prefetch(buffer_size=AUTOTUNE)
+            val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+            test_ds = test_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
             with self.__distributed_strategy.scope():
                 cnn = VGG16(
@@ -178,18 +137,18 @@ class HyperParameterSearch:
 
             start = time.time()
             cnn.fit(
-                self.__train_ds,
+                train_ds,
                 batch_size=test_batch_size,
                 epochs=test_epoch,
                 verbose=self.__verbose,
-                validation_data=(self.__val_ds),
+                validation_data=(val_ds),
                 callbacks=[logger],
             )
             end = time.time()
             time_taken = end - start
 
             metrics = cnn.evaluate(
-                self.__test_ds,
+                test_ds,
                 batch_size=test_batch_size,
                 return_dict=True,
             )

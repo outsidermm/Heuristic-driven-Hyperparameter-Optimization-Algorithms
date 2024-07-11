@@ -18,5 +18,7 @@ def min_max_scalar(data: np.array) -> np.array:
     return (data - np.min(data)) / (np.max(data) - np.min(data))
 
 
-def weighted_avg(val1, val2, weight1=0.5, weight2=0.5):
+def weighted_avg(
+    val1: float, val2: float, weight1: float = 0.5, weight2: float = 0.5
+) -> float:
     return val1 * weight1 + val2 * weight2
