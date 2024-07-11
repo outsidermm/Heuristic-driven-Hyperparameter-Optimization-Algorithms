@@ -2,34 +2,29 @@ from hyperparameter_search import HyperParameterSearch
 from utility.dataloader import DataLoader
 
 if __name__ == "__main__":
-    iamgenet_data = DataLoader("imagenet")
-    imagenet_train_ds, imagenet_val_ds, imagenet_test_ds = iamgenet_data.load_dataset()
-    image_net_batch = HyperParameterSearch(
-        "imagenet",
-        hyperparameter="batch_size",
-        train_ds=imagenet_train_ds,
-        val_ds=imagenet_val_ds,
-        test_ds=imagenet_test_ds,
-        verbose=1,
-    )
-    image_net_batch.training()
+    cifar_100_data = DataLoader("CIFAR-100")
+    cifar_100_train_ds, cifar_100_val_ds, cifar_100_test_ds = cifar_100_data.load_dataset()
 
-    image_net_lr = HyperParameterSearch(
-        "imagenet",
-        hyperparameter="lr",
-        train_ds=imagenet_train_ds,
-        val_ds=imagenet_val_ds,
-        test_ds=imagenet_test_ds,
+    cifar_100_lr = HyperParameterSearch(
+        "CIFAR-100",
+        "lr",
+        train_ds=cifar_100_train_ds,
+        val_ds=cifar_100_val_ds,
+        test_ds=cifar_100_test_ds,
         verbose=1,
     )
-    image_net_lr.training()
 
-    image_net_momentum = HyperParameterSearch(
-        "imagenet",
-        hyperparameter="momentum",
-        train_ds=imagenet_train_ds,
-        val_ds=imagenet_val_ds,
-        test_ds=imagenet_test_ds,
+    cifar_100_lr.training()
+
+    cifar_100_batch_size = HyperParameterSearch(
+        "CIFAR-100",
+        "batch_size",
+        train_ds=cifar_100_train_ds,
+        val_ds=cifar_100_val_ds,
+        test_ds=cifar_100_test_ds,
         verbose=1,
     )
-    image_net_momentum.training()
+    cifar_100_batch_size.training()
+
+
+
