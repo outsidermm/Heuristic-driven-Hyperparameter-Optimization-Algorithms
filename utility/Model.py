@@ -1,17 +1,5 @@
+from typing import Tuple
 from keras import layers, models, regularizers
-
-
-def data_augmentation() -> models.Sequential:
-    preprocessing = models.Sequential()
-    # Preprocessing - Data Augmentation
-    preprocessing.add(layers.RandomContrast(factor=0.2, seed=42))
-    preprocessing.add(layers.RandomFlip(mode="HORIZONTAL", seed=42))
-    preprocessing.add(layers.RandomRotation(factor=0.1, seed=42))
-    preprocessing.add(
-        layers.RandomTranslation(height_factor=0.1, width_factor=0.1, seed=42)
-    )
-
-    return preprocessing
 
 
 def normalisation() -> models.Sequential:
@@ -20,10 +8,15 @@ def normalisation() -> models.Sequential:
     return normalisation
 
 
-def add_layer(model, num, dropout=True, weight_decay=0.0005):
+def add_layer(
+    model: models.Sequential,
+    filter_num: int,
+    dropout: bool = True,
+    weight_decay: float = 0.0005,
+) -> models.Sequential:
     model.add(
         layers.Conv2D(
-            num,
+            filter_num,
             (3, 3),
             padding="same",
             kernel_regularizer=regularizers.l2(weight_decay),
@@ -36,10 +29,19 @@ def add_layer(model, num, dropout=True, weight_decay=0.0005):
     return model
 
 
-def VGG16(input_shape, num_class, weight_decay=0.0005):
+def VGG16(
+    input_shape: Tuple[int, int, int], num_class: int, weight_decay: float = 0.0005
+):
 
     model = models.Sequential()
     model.add(layers.Input(shape=input_shape))
+
+    # Preprocessing - Data Augmentation
+    model.add(layers.RandomFlip(mode="HORIZONTAL", seed=42))
+    model.add(layers.RandomRotation(factor=0.1, seed=42))
+    model.add(layers.RandomTranslation(height_factor=0.1, width_factor=0.1, seed=42))
+
+    # Preprocessing - VGG-16
     model.add(
         layers.Conv2D(
             64,
@@ -48,7 +50,7 @@ def VGG16(input_shape, num_class, weight_decay=0.0005):
             kernel_regularizer=regularizers.l2(weight_decay),
         )
     )
-    model.add(layers.Activation("relu"))
+    model.add(layers.ReLU())
     model.add(layers.BatchNormalization())
     model.add(layers.Dropout(0.3))
 
@@ -86,11 +88,11 @@ def VGG16(input_shape, num_class, weight_decay=0.0005):
 
     model.add(layers.Flatten())
     model.add(layers.Dense(512, kernel_regularizer=regularizers.l2(weight_decay)))
-    model.add(layers.Activation("relu"))
+    model.add(layers.ReLU())
     model.add(layers.BatchNormalization())
 
     model.add(layers.Dropout(0.5))
     model.add(layers.Dense(num_class))
-    model.add(layers.Activation("softmax"))
+    model.add(layers.Softmax())
 
     return model
