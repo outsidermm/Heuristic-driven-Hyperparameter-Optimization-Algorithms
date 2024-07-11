@@ -36,11 +36,12 @@ class Searcher:
         self.__val_ds = val_ds
         self.__test_ds = test_ds
         self.__input_shape = (64, 64, 3) if dataset == "imagenet" else (32, 32, 3)
+        self.__num_classes = 200 if self.__dataset == "imagenet" else 100
         backend.clear_session()
 
     def training(
         self,
-        epoch: int = 500,
+        epoch: int = 250,
         batch_size: int = 128,
         lr: float = 0.01,
         momentum: float = 0.9,
