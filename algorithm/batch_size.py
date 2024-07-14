@@ -16,7 +16,11 @@ class BatchTuner:
     __time_list = np.array([])
 
     def __init__(
-        self, dataset: str, left_bound: int, right_bound: int, acceptable_range: int
+        self,
+        dataset: str,
+        left_bound: int,
+        right_bound: int,
+        acceptable_range: float = 0.30,
     ) -> None:
         self.__acceptable_range = acceptable_range / 2
         self.__left_bound = left_bound
@@ -36,7 +40,7 @@ class BatchTuner:
                 verbose=1,
             ).training(batch_size=2**left)
         except tf.errors.ResourceExhaustedError:
-            return -1.0 - 1.0 - 1
+            return -1.0, -1.0, -1.0
 
         right = self.__right_bound
         mid = left + (right - left) // 2
