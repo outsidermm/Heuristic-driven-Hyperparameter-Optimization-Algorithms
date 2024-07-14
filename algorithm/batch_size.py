@@ -77,6 +77,3 @@ class BatchTuner:
             self.__accuracy_list[self.__batch_list == best_batch][0],
             self.__time_list[self.__batch_list == best_batch][0],
         )
-
-
-print(BatchTuner("CIFAR-100", 1, 6, 40).search())
