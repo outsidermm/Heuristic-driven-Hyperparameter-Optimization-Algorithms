@@ -1,6 +1,6 @@
 # Heuristic-Driven Hyperparameter Optimization Algorithms
 
-Welcome to the GitHub repository for the paper "Hyperparameter Tuning: Heuristic-driven Hyperparameter Tuning Algorithms." This project explores heuristic-based hyperparameter optimization (HPO) algorithms, offering an efficient alternative to traditional methods like Grid Search and Bayesian Optimization. The proposed algorithms are designed to balance computational efficiency and model performance, making them accessible to both novice and experienced machine learning practitioners.
+Welcome to the GitHub repository for the paper "Heuristic-driven Hyperparameter Optimization Algorithms." This project explores heuristic-based hyperparameter optimization (HPO) algorithms, offering an efficient alternative to traditional methods like Grid Search and Bayesian Optimization. The proposed algorithms are designed to balance computational efficiency and model performance, making them accessible to both novice and experienced machine learning practitioners.
 
 ## Table of Contents
 
