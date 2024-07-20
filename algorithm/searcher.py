@@ -71,7 +71,7 @@ class Searcher:
                 "Top1",
                 "Top5",
             ],
-            "./algorithm/" + self.__dataset + "/batch.csv",
+            "./algorithm/" + self.__dataset + "/lr.csv",
         )
 
         backend.clear_session()
@@ -132,7 +132,7 @@ class Searcher:
                 "Top1",
                 "Top5",
             ],
-            "./algorithm/" + self.__dataset + "/batch.csv",
+            "./algorithm/" + self.__dataset + "/lr.csv",
         )
 
         return time_taken, accuracy

@@ -26,24 +26,7 @@ class GridSearch:
         val_ds: tf.data.Dataset,
         test_ds: tf.data.Dataset,
         epoch_range: list[int] = [250],
-        batch_size_range: list[int] = [
-            16,
-            32,
-            64,
-            128,
-            256,
-            512,
-            1024,
-            2048,
-            4096,
-            8192,
-            16384,
-            65536,
-            262144,
-            1048576,
-            4194304,
-            16777216,
-        ],
+        batch_size_range: list[int] = [128],
         lr_range: list[float] = [0.01],
         momentum_range: list[float] = [0.9],
         verbose: int = 2,
@@ -66,6 +49,13 @@ class GridSearch:
         top_1_metrics = TOP_1 if self.__dataset == "imagenet" else TOP_1_SPARSE
         top_5_metrics = TOP_5 if self.__dataset == "imagenet" else TOP_5_SPARSE
         loss_function = LOSS if self.__dataset == "imagenet" else LOSS_SPARSE
+
+        print(
+            self.__epoch_range,
+            self.__batch_size_range,
+            self.__lr_range,
+            self.__momentum_range,
+        )
 
         for test_epoch in self.__epoch_range:
             for test_batch_size in self.__batch_size_range:

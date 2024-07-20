@@ -57,15 +57,14 @@ class HyperParameterSearch:
 
         search_space = None
         if self.__hyperparameter == "epoch":
-            search_space = np.arange(20, 381, step=90)
+            search_space = np.arange(10, 155, step=5)
         elif self.__hyperparameter == "batch_size":
-            linear_search_space = np.arange(4, 14, 2)  # 16 to 4096
+            linear_search_space = np.arange(4, 13)  # 16 to 4096
             search_space = np.power(2, linear_search_space)
+            search_space *= self.__num_device
         elif self.__hyperparameter == "lr":
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
             search_space = np.power(10, linear_search_space)
-        elif self.__hyperparameter == "momentum":
-            search_space = np.linspace(0, 0.9, 7)
         else:
             print("Wrong Hyperparameter Input!")
 

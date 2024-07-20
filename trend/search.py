@@ -2,29 +2,39 @@ from hyperparameter_search import HyperParameterSearch
 from utility.dataloader import DataLoader
 
 if __name__ == "__main__":
-    cifar_100_data = DataLoader("CIFAR-100")
-    cifar_100_train_ds, cifar_100_val_ds, cifar_100_test_ds = cifar_100_data.load_dataset()
+    data = DataLoader("imagenet")
+    train_ds, val_ds, test_ds = data.load_dataset()
 
-    cifar_100_lr = HyperParameterSearch(
-        "CIFAR-100",
+    imagenet_lr = HyperParameterSearch(
+        "imagenet",
         "lr",
-        train_ds=cifar_100_train_ds,
-        val_ds=cifar_100_val_ds,
-        test_ds=cifar_100_test_ds,
+        train_ds=train_ds,
+        val_ds=val_ds,
+        test_ds=test_ds,
         verbose=1,
     )
 
-    cifar_100_lr.training()
+    imagenet_lr.training()
 
-    cifar_100_batch_size = HyperParameterSearch(
-        "CIFAR-100",
+    imagenet_epoch = HyperParameterSearch(
+        "imagenet",
+        "epoch",
+        train_ds=train_ds,
+        val_ds=val_ds,
+        test_ds=test_ds,
+        verbose=1,
+    )
+
+    imagenet_epoch.training()
+
+    imagenet_batch = HyperParameterSearch(
+        "imagenet",
         "batch_size",
-        train_ds=cifar_100_train_ds,
-        val_ds=cifar_100_val_ds,
-        test_ds=cifar_100_test_ds,
+        train_ds=train_ds,
+        val_ds=val_ds,
+        test_ds=test_ds,
         verbose=1,
     )
-    cifar_100_batch_size.training()
-
+    imagenet_batch.training()
 
 
