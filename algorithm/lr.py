@@ -35,10 +35,10 @@ class LrTuner:
 
         while left <= right:
             mid = left + (right - left) // 2
-            
+
             mid_acc, mid_time = self.data_stat_search(lr_linear=mid)
-            left_acc,left_time = self.data_stat_search(lr_linear=left)
-            right_acc,right_time = self.data_stat_search(lr_linear=right)
+            left_acc, left_time = self.data_stat_search(lr_linear=left)
+            right_acc, right_time = self.data_stat_search(lr_linear=right)
 
             if (mid_acc > left_acc + self.__local_extrema_allowance) and (
                 mid_acc > right_acc + self.__local_extrema_allowance
@@ -52,7 +52,7 @@ class LrTuner:
 
         return -1, -1, -1
 
-    def data_stat_search(self, lr_linear: float) -> Tuple[float,float]:
+    def data_stat_search(self, lr_linear: float) -> Tuple[float, float]:
         if lr_linear not in self.__lr_list:
             time, acc = Searcher(
                 dataset=self.__dataset,
@@ -67,6 +67,5 @@ class LrTuner:
         else:
             acc = self.__accuracy_list[self.__lr_list == lr_linear][0]
             time = self.__time_list[self.__lr_list == lr_linear][0]
-        
-        return acc, time
 
+        return acc, time

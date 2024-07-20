@@ -9,7 +9,7 @@ from typing import Tuple
 import tensorflow as tf
 
 
-class BatchTuner:
+class BatchSizeTuner:
 
     __batch_list = np.array([])
     __accuracy_list = np.array([])

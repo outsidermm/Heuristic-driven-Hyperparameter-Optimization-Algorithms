@@ -62,29 +62,23 @@ class EpochTuner:
         best_epoch = self.__left_bound
         EpochTuner.epoch_run(self, self.__left_bound)
         EpochTuner.epoch_run(self, self.__right_bound)
-        left_efficiency = weighted_avg(
-            self.__time_normalized[self.__epoch_list == left][0],
-            1 - self.__accuracy_normalized[self.__epoch_list == left][0],
-        )
-        right_efficiency = weighted_avg(
-            self.__time_normalized[self.__epoch_list == right][0],
-            1 - self.__accuracy_normalized[self.__epoch_list == right][0],
-        )
-        mid_efficiency = math.inf
-        best_efficiency = math.inf
+
+        left_efficiency = self.weighted_avg_from_epoch(left)
+        right_efficiency = self.weighted_avg_from_epoch(right)
+
+        mid_efficiency = best_efficiency = math.inf
 
         while left <= right:
             # If the interval between left and right is smaller than the exploration factor, the lowest efficiency is found in the intervals
             if right - left <= self.__exploration_factor:
-                if left_efficiency < best_efficiency:
-                    best_efficiency = left_efficiency
-                    best_epoch = self.__epoch_list[self.__epoch_list == left]
-                if right_efficiency < best_efficiency:
-                    best_efficiency = right_efficiency
-                    best_epoch = self.__epoch_list[self.__epoch_list == right]
-                if mid_efficiency < best_efficiency:
-                    best_efficiency = mid_efficiency
-                    best_epoch = self.__epoch_list[self.__epoch_list == mid]
+                for efficiency, epoch in [
+                    (left_efficiency, left),
+                    (right_efficiency, right),
+                    (mid_efficiency, mid),
+                ]:
+                    if efficiency < best_efficiency:
+                        best_efficiency = efficiency
+                        best_epoch = self.__epoch_list[self.__epoch_list == epoch][0]
                 break
 
             mid = (left + right) // 2
@@ -92,24 +86,13 @@ class EpochTuner:
             # Explore left, right and mid accuracy / time weighted average
 
             EpochTuner.epoch_run(self, mid)
-            mid_efficiency = weighted_avg(
-                self.__time_normalized[self.__epoch_list == mid][0],
-                1 - self.__accuracy_normalized[self.__epoch_list == mid][0],
-            )
-
             EpochTuner.epoch_run(self, left)
-            left_efficiency = weighted_avg(
-                self.__time_normalized[self.__epoch_list == left][0],
-                1 - self.__accuracy_normalized[self.__epoch_list == left][0],
-            )
-
             EpochTuner.epoch_run(self, right)
-            right_efficiency = weighted_avg(
-                self.__time_normalized[self.__epoch_list == right][0],
-                1 - self.__accuracy_normalized[self.__epoch_list == right][0],
-            )
 
-            print(left_efficiency, mid_efficiency, right_efficiency)
+            mid_efficiency = self.weighted_avg_from_epoch(mid)
+            left_efficiency = self.weighted_avg_from_epoch(left)
+            right_efficiency = self.weighted_avg_from_epoch(right)
+
             if left_efficiency < mid_efficiency:
                 right = mid
             elif right_efficiency < mid_efficiency:
@@ -122,4 +105,10 @@ class EpochTuner:
             best_epoch[0],
             self.__accuracy_list[self.__epoch_list == best_epoch][0],
             self.__time_list[self.__epoch_list == best_epoch][0],
+        )
+
+    def weighted_avg_from_epoch(self, epoch: int) -> float:
+        return weighted_avg(
+            self.__time_normalized[self.__epoch_list == epoch][0],
+            1 - self.__accuracy_normalized[self.__epoch_list == epoch][0],
         )
