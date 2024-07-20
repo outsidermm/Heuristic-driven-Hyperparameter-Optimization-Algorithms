@@ -32,13 +32,7 @@ class BatchSizeTuner:
     def search(self) -> Tuple[int, float, float]:
         left = self.__left_bound
         try:
-            _, acc_bound = Searcher(
-                dataset=self.__dataset,
-                train_ds=self.__train_ds,
-                val_ds=self.__val_ds,
-                test_ds=self.__test_ds,
-                verbose=1,
-            ).training(batch_size=2**left)
+            _, acc_bound = self.batch_size_runner(left)
         except tf.errors.ResourceExhaustedError:
             return -1.0, -1.0, -1.0
 
@@ -47,13 +41,7 @@ class BatchSizeTuner:
 
         while left <= right:
             try:
-                time, acc = Searcher(
-                    dataset=self.__dataset,
-                    train_ds=self.__train_ds,
-                    val_ds=self.__val_ds,
-                    test_ds=self.__test_ds,
-                    verbose=1,
-                ).training(batch_size=2**mid)
+                time, acc = self.batch_size_runner(mid)
 
                 if mid not in self.__batch_list:
                     self.__time_list = np.append(self.__time_list, time)
@@ -77,3 +65,12 @@ class BatchSizeTuner:
             self.__accuracy_list[self.__batch_list == best_batch][0],
             self.__time_list[self.__batch_list == best_batch][0],
         )
+
+    def batch_size_runner(self, batch_size: int) -> Tuple[float, float]:
+        return Searcher(
+            dataset=self.__dataset,
+            train_ds=self.__train_ds,
+            val_ds=self.__val_ds,
+            test_ds=self.__test_ds,
+            verbose=1,
+        ).training(batch_size=2**batch_size)
