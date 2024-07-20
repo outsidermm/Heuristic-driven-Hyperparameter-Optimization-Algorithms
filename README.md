@@ -12,6 +12,7 @@ Welcome to the GitHub repository for the paper "Hyperparameter Tuning: Heuristic
 6. [Future Work](#future-work)
 7. [Conclusion](#conclusion)
 8. [Acknowledgements](#acknowledgements)
+9. [Installation](#installation)
 
 ## Abstract
 
@@ -96,8 +97,21 @@ Further research could also explore the impact of ML optimization techniques suc
 
 ## Conclusion
 
-This project presents three heuristic-driven algorithms for hyperparameter optimization, compared against Grid Search on the CIFAR-100 dataset. The results show that heuristic algorithms can significantly reduce the time needed for hyperparameter search while maintaining competitive model performance, making them suitable for entry-level optimization in ML communities.
+This project presents three heuristic-driven algorithms for hyperparameter optimization, compared against Grid Search on the CIFAR-100 dataset. The results show that heuristic algorithms can significantly reduce the time needed for hyperparameter search while maintaining competitive model performance, making them suitable for entry-level optimization in ML communities. The flexibility in configuring the overhead weighting according to personal preferences also highlights the practical applicability of these algorithms.
 
 ## Acknowledgements
 
 We would like to thank Professor Seda Memik from the University of Northwestern for providing mentoring and feedback. We also thank Professor Manyi Wang and his research team from the Nanjing University of Information Science and Technology for their technical support.
+
+## Installation
+
+To install and run the heuristic-driven HPO algorithms, follow these steps:
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/outsidermm/Optimisation-of-Grid-Search-for-CNN-Hyperparameter-Tuning.git
+    ```
+2. Install the required dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
