@@ -1,6 +1,6 @@
 absl-py==2.1.0
 h5py==3.16.0
-joblib==1.4.2
+joblib==1.5.3
 keras==3.14.0
 keras-tuner==1.4.7
 matplotlib-inline==0.2.1
