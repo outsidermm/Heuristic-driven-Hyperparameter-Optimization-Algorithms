@@ -1,11 +1,11 @@
-absl-py==2.1.0
+absl-py==2.4.0
 h5py==3.16.0
 joblib==1.5.3
 keras==3.14.0
 keras-tuner==1.4.7
 matplotlib-inline==0.2.1
-numpy==1.26.4
 scikit-learn==1.8.0
+numpy==2.4.4
 scipy==1.17.1
 tensorboard==2.20.0
 tensorflow==2.21.0
