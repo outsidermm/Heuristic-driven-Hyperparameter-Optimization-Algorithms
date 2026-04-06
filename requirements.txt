@@ -1,4 +1,4 @@
-absl-py==2.1.0
+absl-py==2.4.0
 h5py==3.16.0
 joblib==1.5.3
 keras==3.14.0
