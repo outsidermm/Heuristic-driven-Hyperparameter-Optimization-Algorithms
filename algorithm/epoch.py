@@ -1,16 +1,39 @@
-import numpy as np
 import math
-import sys
+from collections.abc import Callable
 
-sys.path.append(".")
+import numpy as np
 
-from utility.helper_func import min_max_scalar, weighted_avg
-from searcher import Searcher
 from utility.dataloader import DataLoader
-from typing import Tuple
+from utility.helper_func import min_max_scalar, weighted_avg
+
+from .searcher import Searcher
 
 
 class EpochTuner:
+    """Heuristic binary-search tuner for the optimal number of training epochs.
+
+    Uses a weighted efficiency metric combining normalized training time and
+    (1 - accuracy) to find the epoch count with the best accuracy/time trade-off.
+
+    Parameters
+    ----------
+    dataset : str
+        Either ``"cifar100"`` or ``"imagenet"``.
+    left_bound : int
+        Minimum epoch count to consider.
+    right_bound : int
+        Maximum epoch count to consider.
+    exploration_factor : int
+        Stops the search when ``right - left <= exploration_factor``.
+    training_fn : Callable[[int], tuple[float, float]] | None
+        Optional override for the training function. Called as
+        ``training_fn(epoch)`` and must return ``(time, accuracy)``.
+        When ``None`` (default) a real ``Searcher`` + ``DataLoader`` is used.
+        Pass a custom callable to run without TensorFlow or dataset files.
+    dataset_dir : str
+        Root directory for dataset ``.npy`` files (default ``"./dataset"``).
+        Ignored when ``training_fn`` is provided.
+    """
 
     __epoch_list = np.array([])
     __time_list = np.array([])
@@ -25,24 +48,34 @@ class EpochTuner:
         left_bound: int,
         right_bound: int,
         exploration_factor: int = 1,
+        training_fn: Callable[[int], tuple[float, float]] | None = None,
+        dataset_dir: str = "./dataset",
     ) -> None:
         self.__left_bound = left_bound
         self.__right_bound = right_bound
         self.__exploration_factor = exploration_factor
         self.__dataset = dataset
-        dataset_loader = DataLoader(self.__dataset)
-        self.__train_ds, self.__val_ds, self.__test_ds = dataset_loader.load_dataset()
+        if training_fn is not None:
+            self.__training_fn = training_fn
+            self.__train_ds = self.__val_ds = self.__test_ds = None
+        else:
+            dataset_loader = DataLoader(self.__dataset, dataset_dir=dataset_dir)
+            self.__train_ds, self.__val_ds, self.__test_ds = dataset_loader.load_dataset()
+            self.__training_fn = None
 
     def epoch_run(self, epoch: int) -> None:
         # run the epoch
         if epoch not in self.__epoch_list:
-            time, acc = Searcher(
-                dataset=self.__dataset,
-                train_ds=self.__train_ds,
-                val_ds=self.__val_ds,
-                test_ds=self.__test_ds,
-                verbose=1,
-            ).training(epoch=epoch)
+            if self.__training_fn is not None:
+                time, acc = self.__training_fn(epoch)
+            else:
+                time, acc = Searcher(
+                    dataset=self.__dataset,
+                    train_ds=self.__train_ds,
+                    val_ds=self.__val_ds,
+                    test_ds=self.__test_ds,
+                    verbose=1,
+                ).training(epoch=epoch)
 
             self.__time_list = np.append(self.__time_list, time)
             self.__accuracy_list = np.append(self.__accuracy_list, acc)
@@ -56,7 +89,14 @@ class EpochTuner:
                 self.__time_normalized = min_max_scalar(self.__time_list)
                 self.__accuracy_normalized = min_max_scalar(self.__accuracy_list)
 
-    def binary_search_efficient_epoch(self) -> Tuple[int, float, float]:
+    def binary_search_efficient_epoch(self) -> tuple[int, float, float]:
+        """Search for the most efficient epoch count.
+
+        Returns
+        -------
+        Tuple[int, float, float]
+            ``(best_epoch, accuracy_at_best_epoch, time_at_best_epoch)``
+        """
         left = self.__left_bound
         right = self.__right_bound
         best_epoch = self.__left_bound
@@ -66,6 +106,7 @@ class EpochTuner:
         left_efficiency = self.weighted_avg_from_epoch(left)
         right_efficiency = self.weighted_avg_from_epoch(right)
 
+        mid = left  # sentinel: mid is unused on the first pass when interval is already small
         mid_efficiency = best_efficiency = math.inf
 
         while left <= right:
@@ -102,9 +143,9 @@ class EpochTuner:
                 right = mid
 
         return (
-            best_epoch[0],
-            self.__accuracy_list[self.__epoch_list == best_epoch][0],
-            self.__time_list[self.__epoch_list == best_epoch][0],
+            int(best_epoch),
+            float(self.__accuracy_list[self.__epoch_list == best_epoch][0]),
+            float(self.__time_list[self.__epoch_list == best_epoch][0]),
         )
 
     def weighted_avg_from_epoch(self, epoch: int) -> float:

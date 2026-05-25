@@ -1,13 +1,15 @@
-import sys
-
-sys.path.append(".")
-
-from keras import optimizers, losses, metrics, callbacks, backend
-from utility.model import VGG16
-from utility.helper_func import write_csv, write_header
+import logging
 import time
+from pathlib import Path
+
 import numpy as np
 import tensorflow as tf
+from keras import backend, callbacks, losses, metrics, optimizers
+
+from utility.helper_func import write_csv, write_header
+from utility.model import VGG16
+
+logger = logging.getLogger(__name__)
 
 TOP_1 = metrics.TopKCategoricalAccuracy(k=1, name="Top_1")
 TOP_5 = metrics.TopKCategoricalAccuracy(k=5, name="Top_5")
@@ -35,6 +37,7 @@ class HyperParameterSearch:
     ) -> None:
         self.__dataset = dataset
         self.__hyperparameter = hyperparameter
+        self.__output_dir = Path("./trend") / dataset
         self.__epoch = epoch
         self.__batch_size = batch_size
         self.__momentum = momentum
@@ -48,6 +51,7 @@ class HyperParameterSearch:
         self.__test_ds = test_ds
         self.__input_shape = (64, 64, 3) if dataset == "imagenet" else (32, 32, 3)
         self.__num_classes = 200 if self.__dataset == "imagenet" else 100
+        self.__output_dir.mkdir(parents=True, exist_ok=True)
         backend.clear_session()
 
     def training(self) -> None:
@@ -66,17 +70,17 @@ class HyperParameterSearch:
             linear_search_space = np.linspace(-7, -1, 7, endpoint=True)
             search_space = np.power(10, linear_search_space)
         else:
-            print("Wrong Hyperparameter Input!")
+            logger.error("Unknown hyperparameter: %s", self.__hyperparameter)
+            return
 
         test_epoch = self.__epoch
         test_batch_size = self.__batch_size
         test_lr = self.__lr
         test_momentum = self.__momentum
 
-        write_header(
-            [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
-            "./trend/" + self.__dataset + "/" + self.__hyperparameter + ".csv",
-        )
+        hp_csv = str(self.__output_dir / f"{self.__hyperparameter}.csv")
+        CSV_HEADER = [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"]
+        write_header(CSV_HEADER, hp_csv)
 
         for changing_hp in search_space:
             backend.clear_session()
@@ -89,7 +93,8 @@ class HyperParameterSearch:
             elif self.__hyperparameter == "momentum":
                 test_momentum = changing_hp
             else:
-                print("Wrong Hyperparameter Input!")
+                logger.error("Unknown hyperparameter: %s", self.__hyperparameter)
+                continue
 
             train_ds = self.__train_ds.batch(test_batch_size)
             val_ds = self.__val_ds.batch(test_batch_size)
@@ -113,27 +118,10 @@ class HyperParameterSearch:
                     metrics=["accuracy", top_1_metrics, top_5_metrics],
                 )
 
-            log = open(
-                "./trend/"
-                + self.__dataset
-                + "/"
-                + self.__hyperparameter
-                + "_"
-                + str(changing_hp)
-                + "_log.csv",
-                "a",
+            epoch_log_path = str(
+                self.__output_dir / f"{self.__hyperparameter}_{changing_hp}_log.csv"
             )
-            log.close()
-
-            logger = callbacks.CSVLogger(
-                "./trend/"
-                + self.__dataset
-                + "/"
-                + self.__hyperparameter
-                + "_"
-                + str(changing_hp)
-                + "_log.csv"
-            )
+            csv_logger = callbacks.CSVLogger(epoch_log_path)
 
             start = time.time()
             cnn.fit(
@@ -142,22 +130,22 @@ class HyperParameterSearch:
                 epochs=test_epoch,
                 verbose=self.__verbose,
                 validation_data=(val_ds),
-                callbacks=[logger],
+                callbacks=[csv_logger],
             )
             end = time.time()
             time_taken = end - start
 
-            metrics = cnn.evaluate(
+            eval_metrics = cnn.evaluate(
                 test_ds,
                 batch_size=test_batch_size,
                 return_dict=True,
             )
 
-            accuracy = metrics["accuracy"]
-            top_1 = metrics["Top_1"]
-            top_5 = metrics["Top_5"]
+            accuracy = eval_metrics["accuracy"]
+            top_1 = eval_metrics["Top_1"]
+            top_5 = eval_metrics["Top_5"]
 
-            print(f"Time taken: {time_taken}, Accuracy: {accuracy}")
+            logger.info("Time taken: %.2f s, Accuracy: %.4f", time_taken, accuracy)
             write_csv(
                 [
                     {
@@ -168,6 +156,6 @@ class HyperParameterSearch:
                         "Top5": top_5,
                     }
                 ],
-                [self.__hyperparameter, "Time", "Accuracy", "Top1", "Top5"],
-                "./trend/" + self.__dataset + "/" + self.__hyperparameter + ".csv",
+                CSV_HEADER,
+                hp_csv,
             )

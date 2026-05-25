@@ -1,4 +1,4 @@
-from typing import Tuple
+
 from keras import layers, models, regularizers
 
 
@@ -30,7 +30,7 @@ def add_layer(
 
 
 def VGG16(
-    input_shape: Tuple[int, int, int], num_class: int, weight_decay: float = 0.0005
+    input_shape: tuple[int, int, int], num_class: int, weight_decay: float = 0.0005
 ):
 
     model = models.Sequential()
