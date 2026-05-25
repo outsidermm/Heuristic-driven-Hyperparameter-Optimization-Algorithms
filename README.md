@@ -1,5 +1,7 @@
 # Heuristic-Driven Hyperparameter Optimization Algorithms
 
+![CI](https://github.com/outsidermm/Heuristic-driven-Hyperparameter-Optimization-Algorithms/actions/workflows/ci.yml/badge.svg)
+
 Welcome to the GitHub repository for the paper "Heuristic-driven Hyperparameter Optimization Algorithms." This project explores heuristic-based hyperparameter optimization (HPO) algorithms, offering an efficient alternative to traditional methods like Grid Search and Bayesian Optimization. The proposed algorithms are designed to balance computational efficiency and model performance, making them accessible to both novice and experienced machine learning practitioners.
 
 ## Table of Contents
@@ -105,13 +107,57 @@ We would like to thank Professor Seda Memik from the University of Northwestern 
 
 ## Installation
 
-To install and run the heuristic-driven HPO algorithms, follow these steps:
+**With uv (recommended):**
+```bash
+uv add heuristic-hpo
+# TensorFlow / Keras are optional — install when you need to run training:
+uv add "heuristic-hpo[tf]"
+```
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/outsidermm/Optimisation-of-Grid-Search-for-CNN-Hyperparameter-Tuning.git
-    ```
-2. Install the required dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+**With pip:**
+```bash
+pip install heuristic-hpo
+pip install "heuristic-hpo[tf]"  # includes TensorFlow + Keras
+```
+
+**From source:**
+```bash
+git clone https://github.com/outsidermm/Heuristic-driven-Hyperparameter-Optimization-Algorithms.git
+cd Heuristic-driven-Hyperparameter-Optimization-Algorithms
+uv sync --extra tf
+```
+
+## Quick Start
+
+```python
+from utility.dataloader import DataLoader
+from algorithm import EpochTuner, BatchSizeTuner, LrTuner
+
+# Load your dataset (expects ./dataset/cifar100/{X,y}_{train,test}.npy)
+loader = DataLoader("cifar100")
+train_ds, val_ds, test_ds = loader.load_dataset()
+
+# Find the most cost-efficient epoch count between 10 and 250
+tuner = EpochTuner("cifar100", left_bound=10, right_bound=250, exploration_factor=5)
+best_epoch, accuracy, time_taken = tuner.binary_search_efficient_epoch()
+print(f"Best epoch: {best_epoch}, accuracy: {accuracy:.4f}, time: {time_taken:.1f}s")
+
+# Find the largest safe batch size (log2 scale: 4=16, 12=4096)
+bs_tuner = BatchSizeTuner("cifar100", left_bound=4, right_bound=12, acceptable_range=0.30)
+best_bs, accuracy, time_taken = bs_tuner.search()
+print(f"Best batch size: {best_bs}")
+
+# Find the optimal learning rate (searches 10^-1 to 10^-7)
+lr_tuner = LrTuner("cifar100", left_bound=1, right_bound=7, local_extrema_allowance=0.05)
+lr_exp, accuracy, time_taken = lr_tuner.search()
+print(f"Best learning rate: 1e-{lr_exp}, accuracy: {accuracy:.4f}")
+```
+
+## Development
+
+```bash
+uv sync --group dev       # install dev tools (pytest, ruff)
+uv run pytest tests/ -v   # run tests (TF-independent tests run without --extra tf)
+uv run ruff check .       # lint
+uv build                  # build wheel
+```
