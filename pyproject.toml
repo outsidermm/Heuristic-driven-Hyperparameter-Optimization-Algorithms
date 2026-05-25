@@ -1,0 +1,52 @@
+[project]
+name = "heuristic-hpo"
+version = "0.1.0"
+description = "Heuristic-driven hyperparameter optimization algorithms for deep learning"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "outsidermm" }]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+]
+
+[project.optional-dependencies]
+tf = [
+    "tensorflow>=2.21",
+    "keras>=3.14",
+]
+full = [
+    "heuristic-hpo[tf]",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-mock>=3",
+    "ruff>=0.9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["algorithm", "grid_search", "trend", "utility"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
