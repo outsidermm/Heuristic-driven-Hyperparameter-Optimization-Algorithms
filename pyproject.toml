@@ -23,7 +23,7 @@ full = [
 
 [dependency-groups]
 dev = [
-    "pytest>=8",
+    "pytest>=9.1.0",
     "pytest-mock>=3",
     "ruff>=0.15.16",
 ]
