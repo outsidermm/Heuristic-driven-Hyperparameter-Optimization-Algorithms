@@ -25,7 +25,7 @@ full = [
 dev = [
     "pytest>=8",
     "pytest-mock>=3",
-    "ruff>=0.15.16",
+    "ruff>=0.15.17",
 ]
 
 [build-system]
